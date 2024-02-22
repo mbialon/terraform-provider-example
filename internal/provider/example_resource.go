@@ -135,10 +135,9 @@ func (r *ExampleResource) Read(ctx context.Context, req resource.ReadRequest, re
 		return
 	}
 
-	if !data.ReadDelay.IsNull() {
-		s := data.ReadDelay.String()
-		tflog.Trace(ctx, "sleep for "+s)
-		duration, err := time.ParseDuration(s)
+	if readDelay := data.ReadDelay.ValueString(); readDelay != "" {
+		tflog.Trace(ctx, "sleep for "+readDelay)
+		duration, err := time.ParseDuration(readDelay)
 		if err != nil {
 			resp.Diagnostics.AddError("Invalid read_delay", fmt.Sprintf("Unable to parse read_delay: %s", err))
 			return
