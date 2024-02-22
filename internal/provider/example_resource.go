@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -36,6 +37,7 @@ type ExampleResourceModel struct {
 	ConfigurableAttribute types.String `tfsdk:"configurable_attribute"`
 	Defaulted             types.String `tfsdk:"defaulted"`
 	Id                    types.String `tfsdk:"id"`
+	ReadDelay             types.String `tfsdk:"read_delay"`
 }
 
 func (r *ExampleResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -64,6 +66,10 @@ func (r *ExampleResource) Schema(ctx context.Context, req resource.SchemaRequest
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
+			},
+			"read_delay": schema.StringAttribute{
+				Optional:            true,
+				MarkdownDescription: "Example attribute to simulate a read delay",
 			},
 		},
 	}
@@ -127,6 +133,17 @@ func (r *ExampleResource) Read(ctx context.Context, req resource.ReadRequest, re
 
 	if resp.Diagnostics.HasError() {
 		return
+	}
+
+	if !data.ReadDelay.IsNull() {
+		s := data.ReadDelay.String()
+		tflog.Trace(ctx, "sleep for "+s)
+		duration, err := time.ParseDuration(s)
+		if err != nil {
+			resp.Diagnostics.AddError("Invalid read_delay", fmt.Sprintf("Unable to parse read_delay: %s", err))
+			return
+		}
+		time.Sleep(duration)
 	}
 
 	// If applicable, this is a great opportunity to initialize any necessary
